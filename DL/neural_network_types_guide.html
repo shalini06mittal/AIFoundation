@@ -1,0 +1,574 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.container { padding: 16px 0; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.tab { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-secondary); font-size: 12px; cursor: pointer; transition: all .15s; font-weight: 500; }
+.tab.active { background: var(--color-text-primary); color: var(--color-background-primary); border-color: transparent; }
+.tab:hover:not(.active) { border-color: var(--color-border-primary); color: var(--color-text-primary); }
+.panel { display: none; }
+.panel.active { display: block; }
+.card { border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; margin-bottom: 16px; }
+.card-header { padding: 14px 18px; display: flex; align-items: center; gap: 12px; }
+.badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+.meta-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.pill { padding: 2px 10px; border-radius: 10px; font-size: 11px; border: 1px solid var(--color-border-secondary); color: var(--color-text-secondary); }
+.card-body { padding: 0 18px 16px; }
+.section-label { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: .05em; margin: 14px 0 6px; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.info-box { padding: 10px 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); }
+.info-box .lbl { font-size: 10px; color: var(--color-text-tertiary); font-weight: 500; margin-bottom: 4px; }
+.info-box .val { font-size: 12px; color: var(--color-text-primary); font-weight: 500; }
+.code-block { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 14px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.65; color: var(--color-text-primary); overflow-x: auto; white-space: pre; border: 1px solid var(--color-border-tertiary); }
+.tag-blue { background: #E6F1FB; color: #0C447C; }
+.tag-green { background: #EAF3DE; color: #27500A; }
+.tag-amber { background: #FAEEDA; color: #633806; }
+.tag-purple { background: #EEEDFE; color: #3C3489; }
+.tag-coral { background: #FAECE7; color: #712B13; }
+.tag-teal { background: #E1F5EE; color: #085041; }
+.tag-pink { background: #FBEAF0; color: #72243E; }
+.viz { border-top: 1px solid var(--color-border-tertiary); padding: 14px 18px 10px; background: var(--color-background-secondary); }
+.viz-title { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 8px; font-weight: 500; }
+.bp-note { font-size: 11px; color: var(--color-text-secondary); padding: 8px 12px; background: var(--color-background-tertiary); border-radius: var(--border-radius-md); border-left: 3px solid var(--color-border-secondary); margin-top: 10px; }
+@media (max-width: 500px) { .info-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+
+<div class="container">
+<div class="tabs" id="tabs"></div>
+<div id="panels"></div>
+</div>
+
+<script>
+const NNs = [
+  {
+    id: "fnn", name: "FNN", full: "Feedforward Neural Network",
+    tagClass: "tag-blue", bp: "Full backprop",
+    why: "Simplest architecture. Data flows one direction: input → hidden layers → output. No memory, no loops.",
+    when: "Tabular data, classification, regression — any fixed-size input/output with no sequence.",
+    useCases: ["Iris classification", "House price prediction", "Customer churn"],
+    backprop: "Standard backpropagation — gradients flow straight back through each layer.",
+    complexity: "Low", data: "Small–Medium", memory: "None",
+    viz: `<svg width="100%" viewBox="0 0 480 90" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+<text x="60" y="14" text-anchor="middle" font-size="10" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">Input</text>
+<text x="200" y="14" text-anchor="middle" font-size="10" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">Hidden 1</text>
+<text x="320" y="14" text-anchor="middle" font-size="10" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">Hidden 2</text>
+<text x="440" y="14" text-anchor="middle" font-size="10" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">Output</text>
+${[30,60,90].map(y=>`<circle cx="60" cy="${y}" r="9" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>`).join('')}
+${[20,50,80].map(y=>`<circle cx="200" cy="${y}" r="9" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>`).join('')}
+${[20,50,80].map(y=>`<circle cx="320" cy="${y}" r="9" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>`).join('')}
+<circle cx="440" cy="50" r="10" fill="#378ADD" stroke="#185FA5" stroke-width="1"/>
+${[30,60,90].flatMap(y1=>[20,50,80].map(y2=>`<line x1="69" y1="${y1}" x2="191" y2="${y2}" stroke="#185FA5" stroke-width="0.4" opacity="0.4" marker-end="url(#a)"/>`)).join('')}
+${[20,50,80].flatMap(y1=>[20,50,80].map(y2=>`<line x1="209" y1="${y1}" x2="311" y2="${y2}" stroke="#185FA5" stroke-width="0.4" opacity="0.4" marker-end="url(#a)"/>`)).join('')}
+${[20,50,80].map(y=>`<line x1="329" y1="${y}" x2="430" y2="50" stroke="#185FA5" stroke-width="0.4" opacity="0.4" marker-end="url(#a)"/>`).join('')}
+</svg>`,
+    code: `import numpy as np
+
+def sigmoid(x): return 1 / (1 + np.exp(-x))
+def sigmoid_d(x): return x * (1 - x)
+
+# XOR problem: tiny FNN with 1 hidden layer
+X = np.array([[0,0],[0,1],[1,0],[1,1]])
+y = np.array([[0],[1],[1],[0]])
+
+np.random.seed(42)
+W1 = np.random.randn(2, 4) * 0.5   # 2 inputs → 4 hidden
+W2 = np.random.randn(4, 1) * 0.5   # 4 hidden → 1 output
+
+for epoch in range(5000):
+    # Forward pass
+    h = sigmoid(X @ W1)             # hidden activations
+    out = sigmoid(h @ W2)           # output
+
+    # Backprop
+    err = y - out
+    d_out = err * sigmoid_d(out)    # output delta
+    d_h   = (d_out @ W2.T) * sigmoid_d(h)  # hidden delta
+
+    W2 += h.T @ d_out * 0.1
+    W1 += X.T @ d_h   * 0.1
+
+print("Predictions:", np.round(out.T, 2))
+# → [[0.02, 0.97, 0.97, 0.03]]  (learned XOR!)`
+  },
+  {
+    id: "cnn", name: "CNN", full: "Convolutional Neural Network",
+    tagClass: "tag-green", bp: "Backprop through convolutions",
+    why: "Shared weight filters detect spatial features (edges, shapes) regardless of position in the image.",
+    when: "Image classification, object detection, facial recognition, any grid-like data.",
+    useCases: ["Image classification", "Medical imaging", "Self-driving car vision"],
+    backprop: "Backprop using cross-correlation gradient. Same chain rule, but grad flows through filter weights.",
+    complexity: "Medium", data: "Large (images)", memory: "None",
+    viz: `<svg width="100%" viewBox="0 0 480 90" xmlns="http://www.w3.org/2000/svg">
+<rect x="20" y="15" width="60" height="60" fill="#C0DD97" stroke="#3B6D11" stroke-width="0.5" rx="4"/>
+<text x="50" y="49" text-anchor="middle" font-size="9" fill="#27500A" font-family="var(--font-sans)" font-weight="500">5×5</text>
+<text x="50" y="61" text-anchor="middle" font-size="9" fill="#27500A" font-family="var(--font-sans)">image</text>
+${[0,4,8].map(i=>`<rect x="${22+i*6}" y="${17+i*6}" width="${56-i*12}" height="${56-i*12}" fill="none" stroke="#3B6D11" stroke-width="0.3" rx="2"/>`).join('')}
+<rect x="120" y="25" width="28" height="28" fill="#97C459" stroke="#3B6D11" stroke-width="1" rx="3"/>
+<text x="134" y="38" text-anchor="middle" font-size="8" fill="#27500A" font-family="var(--font-sans)" font-weight="500">3×3</text>
+<text x="134" y="49" text-anchor="middle" font-size="8" fill="#27500A" font-family="var(--font-sans)">filter</text>
+<line x1="80" y1="45" x2="118" y2="39" stroke="#3B6D11" stroke-width="0.8" marker-end="url(#a)" opacity="0.6"/>
+<text x="195" y="12" text-anchor="middle" font-size="9" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">Feature maps</text>
+${[-8,0,8].map((o,i)=>`<rect x="${180+i*5}" y="${20+o}" width="30" height="50" fill="#EAF3DE" stroke="#639922" stroke-width="0.5" rx="2"/>`).join('')}
+<line x1="150" y1="39" x2="178" y2="39" stroke="#3B6D11" stroke-width="0.8" marker-end="url(#a)" opacity="0.6"/>
+<text x="240" y="40" text-anchor="middle" font-size="11" fill="var(--color-text-secondary)" font-family="var(--font-sans)">→</text>
+<rect x="255" y="28" width="22" height="34" fill="#C0DD97" stroke="#3B6D11" stroke-width="0.5" rx="2"/>
+<text x="266" y="46" text-anchor="middle" font-size="8" fill="#27500A" font-family="var(--font-sans)">Pool</text>
+<text x="308" y="40" text-anchor="middle" font-size="11" fill="var(--color-text-secondary)" font-family="var(--font-sans)">→</text>
+${[25,45,65].map(y=>`<circle cx="340" cy="${y}" r="7" fill="#97C459" stroke="#3B6D11" stroke-width="0.5"/>`).join('')}
+${[25,45,65].map(y=>`<line x1="347" y1="${y}" x2="378" y2="45" stroke="#3B6D11" stroke-width="0.4" opacity="0.5" marker-end="url(#a)"/>`).join('')}
+<circle cx="385" cy="45" r="10" fill="#639922" stroke="#3B6D11" stroke-width="1"/>
+<text x="385" y="49" text-anchor="middle" font-size="8" fill="white" font-family="var(--font-sans)" font-weight="500">out</text>
+</svg>`,
+    code: `import numpy as np
+
+def relu(x): return np.maximum(0, x)
+
+def convolve2d(img, kernel):
+    """Manual 2D convolution (no padding)"""
+    kh, kw = kernel.shape
+    oh, ow = img.shape[0]-kh+1, img.shape[1]-kw+1
+    out = np.zeros((oh, ow))
+    for i in range(oh):
+        for j in range(ow):
+            out[i,j] = (img[i:i+kh, j:j+kw] * kernel).sum()
+    return out
+
+def maxpool2x2(x):
+    h, w = x.shape[0]//2, x.shape[1]//2
+    out = np.zeros((h, w))
+    for i in range(h):
+        for j in range(w):
+            out[i,j] = x[2*i:2*i+2, 2*j:2*j+2].max()
+    return out
+
+# Example: detect vertical edge in a 6x6 image
+image = np.array([
+    [0,0,1,1,0,0],
+    [0,0,1,1,0,0],
+    [0,0,1,1,0,0],
+    [0,0,1,1,0,0],
+    [0,0,1,1,0,0],
+    [0,0,1,1,0,0],
+], dtype=float)
+
+# Vertical edge detector
+v_edge_kernel = np.array([[-1, 0, 1],
+                           [-1, 0, 1],
+                           [-1, 0, 1]])
+
+feature_map = relu(convolve2d(image, v_edge_kernel))
+pooled      = maxpool2x2(feature_map)
+
+print("Feature map shape:", feature_map.shape)  # (4,4)
+print("Pooled shape:", pooled.shape)             # (2,2)
+print("Pooled values:\\n", pooled)
+# Strong activation at column boundary — edge detected!`
+  },
+  {
+    id: "rnn", name: "RNN", full: "Recurrent Neural Network",
+    tagClass: "tag-purple", bp: "BPTT (Backprop Through Time)",
+    why: "Has a hidden state that acts as memory — each step receives both the current input and the previous hidden state.",
+    when: "Sequence data where order matters: time series, text generation, speech.",
+    useCases: ["Sentiment analysis", "Stock prediction", "Text generation"],
+    backprop: "BPTT — network is unrolled through time steps, then normal backprop. Suffers vanishing gradient on long sequences.",
+    complexity: "Medium", data: "Sequential", memory: "Short-term",
+    viz: `<svg width="100%" viewBox="0 0 480 90" xmlns="http://www.w3.org/2000/svg">
+${[0,1,2,3].map(i=>{
+  const x=60+i*100;
+  return `
+<rect x="${x-28}" y="30" width="56" height="32" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8" rx="5"/>
+<text x="${x}" y="50" text-anchor="middle" font-size="10" fill="#3C3489" font-family="var(--font-sans)" font-weight="500">RNN</text>
+<text x="${x}" y="20" text-anchor="middle" font-size="9" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">x${i}</text>
+<line x1="${x}" y1="23" x2="${x}" y2="30" stroke="#7F77DD" stroke-width="0.8" marker-end="url(#a)"/>
+<line x1="${x}" y1="62" x2="${x}" y2="72" stroke="#7F77DD" stroke-width="0.8" marker-end="url(#a)"/>
+<text x="${x}" y="82" text-anchor="middle" font-size="9" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">h${i}</text>`
+}).join('')}
+${[0,1,2].map(i=>`<line x1="${88+i*100}" y1="46" x2="${132+i*100}" y2="46" stroke="#534AB7" stroke-width="1" marker-end="url(#a)"/>`).join('')}
+<path d="M420 46 Q450 46 450 20 Q450 5 60 5 Q40 5 40 20 Q40 35 32 46" fill="none" stroke="#534AB7" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#a)" opacity="0.4"/>
+<text x="240" y="8" text-anchor="middle" font-size="9" fill="#7F77DD" font-family="var(--font-sans)">hidden state loop</text>
+</svg>`,
+    code: `import numpy as np
+
+def tanh(x): return np.tanh(x)
+def tanh_d(x): return 1 - x**2
+
+class SimpleRNN:
+    def __init__(self, input_size, hidden_size, output_size):
+        self.Wx = np.random.randn(input_size, hidden_size)  * 0.1
+        self.Wh = np.random.randn(hidden_size, hidden_size) * 0.1
+        self.Wy = np.random.randn(hidden_size, output_size) * 0.1
+        self.bh = np.zeros((1, hidden_size))
+        self.by = np.zeros((1, output_size))
+
+    def forward(self, inputs):
+        """inputs: list of vectors, one per time step"""
+        h = np.zeros((1, self.Wh.shape[0]))
+        self.hs = [h]      # store all hidden states
+        self.xs = inputs
+
+        outputs = []
+        for x in inputs:
+            x = x.reshape(1, -1)
+            # Key equation: new hidden = tanh(input + previous hidden)
+            h = tanh(x @ self.Wx + h @ self.Wh + self.bh)
+            y = h @ self.Wy + self.by
+            self.hs.append(h)
+            outputs.append(y)
+        return outputs, h
+
+# Toy example: predict next number in sequence
+rnn = SimpleRNN(input_size=1, hidden_size=8, output_size=1)
+
+# Input: [1, 2, 3, 4]  →  want to predict [2, 3, 4, 5]
+inputs = [np.array([i/5.0]) for i in [1, 2, 3, 4]]
+outputs, final_h = rnn.forward(inputs)
+
+print("Final hidden state shape:", final_h.shape)   # (1, 8)
+print("Output at each step:", [round(o[0,0], 2) for o in outputs])`
+  },
+  {
+    id: "lstm", name: "LSTM", full: "Long Short-Term Memory",
+    tagClass: "tag-coral", bp: "BPTT with gating",
+    why: "Solves RNN's vanishing gradient with three gates: forget, input, output. Can remember context across hundreds of steps.",
+    when: "Long sequences, language modeling, translation, anywhere long-range dependencies matter.",
+    useCases: ["Machine translation", "Speech recognition", "Music generation"],
+    backprop: "BPTT through gates. The cell state highway allows gradients to flow without vanishing — that's the whole point.",
+    complexity: "High", data: "Long sequences", memory: "Long-term",
+    viz: `<svg width="100%" viewBox="0 0 480 95" xmlns="http://www.w3.org/2000/svg">
+<rect x="140" y="20" width="200" height="55" fill="#FAECE7" stroke="#993C1D" stroke-width="0.8" rx="6"/>
+<text x="240" y="36" text-anchor="middle" font-size="9" fill="#712B13" font-family="var(--font-sans)" font-weight="500">LSTM Cell</text>
+${[
+  {x:163,label:"f",color:"#F5C4B3",tc:"#712B13"},
+  {x:210,label:"i",color:"#F5C4B3",tc:"#712B13"},
+  {x:257,label:"g",color:"#F0997B",tc:"#712B13"},
+  {x:304,label:"o",color:"#F5C4B3",tc:"#712B13"},
+].map(g=>`
+<circle cx="${g.x}" cy="58" r="12" fill="${g.color}" stroke="#993C1D" stroke-width="0.8"/>
+<text x="${g.x}" y="62" text-anchor="middle" font-size="10" fill="${g.tc}" font-family="var(--font-sans)" font-weight="500">${g.label}</text>
+`).join('')}
+<text x="163" y="82" text-anchor="middle" font-size="8" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">forget</text>
+<text x="210" y="82" text-anchor="middle" font-size="8" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">input</text>
+<text x="257" y="82" text-anchor="middle" font-size="8" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">cell</text>
+<text x="304" y="82" text-anchor="middle" font-size="8" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">output</text>
+<line x1="20" y1="48" x2="138" y2="48" stroke="#993C1D" stroke-width="0.8" marker-end="url(#a)"/>
+<text x="79" y="43" text-anchor="middle" font-size="8" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">x + h_prev</text>
+<line x1="342" y1="48" x2="420" y2="48" stroke="#993C1D" stroke-width="0.8" marker-end="url(#a)"/>
+<text x="381" y="43" text-anchor="middle" font-size="8" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">h_t</text>
+<line x1="20" y1="28" x2="430" y2="28" stroke="#D85A30" stroke-width="1.5" opacity="0.5"/>
+<text x="430" y="23" font-size="8" fill="#993C1D" font-family="var(--font-sans)">cell state (c)</text>
+</svg>`,
+    code: `import numpy as np
+
+def sigmoid(x): return 1 / (1 + np.exp(-x))
+
+class LSTMCell:
+    def __init__(self, input_sz, hidden_sz):
+        n = input_sz + hidden_sz
+        # All 4 gates in one weight matrix (efficient!)
+        self.W = np.random.randn(n, 4 * hidden_sz) * 0.1
+        self.b = np.zeros(4 * hidden_sz)
+        self.h_sz = hidden_sz
+
+    def forward(self, x, h_prev, c_prev):
+        # Concatenate input + previous hidden
+        combined = np.concatenate([x, h_prev])
+
+        # All gate pre-activations at once
+        gates = combined @ self.W + self.b
+
+        n = self.h_sz
+        f = sigmoid(gates[0:n])      # forget gate — what to erase
+        i = sigmoid(gates[n:2*n])    # input gate  — what to write
+        g = np.tanh(gates[2*n:3*n])  # cell gate   — candidate values
+        o = sigmoid(gates[3*n:4*n])  # output gate — what to expose
+
+        c = f * c_prev + i * g       # update cell state
+        h = o * np.tanh(c)           # compute hidden state
+
+        return h, c, {"f":f,"i":i,"g":g,"o":o}
+
+# Run a small LSTM over a sequence
+cell = LSTMCell(input_sz=3, hidden_sz=5)
+h = np.zeros(5)
+c = np.zeros(5)
+
+sequence = [np.random.randn(3) for _ in range(6)]
+
+for t, x in enumerate(sequence):
+    h, c, gates = cell.forward(x, h, c)
+    print(f"t={t}  forget={gates['f'].mean():.2f}  "
+          f"input={gates['i'].mean():.2f}  h_norm={np.linalg.norm(h):.2f}")`
+  },
+  {
+    id: "autoenc", name: "Autoencoder", full: "Autoencoder",
+    tagClass: "tag-teal", bp: "Full backprop (encoder + decoder)",
+    why: "Learns a compressed representation (encoding) by training to reconstruct its own input. Forces the network to capture essential structure.",
+    when: "Dimensionality reduction, anomaly detection, denoising, generative tasks.",
+    useCases: ["Anomaly detection", "Image denoising", "Feature learning"],
+    backprop: "Standard backprop end-to-end. Loss = reconstruction error (MSE). Gradients flow through both decoder and encoder.",
+    complexity: "Medium", data: "Unlabeled", memory: "None",
+    viz: `<svg width="100%" viewBox="0 0 480 90" xmlns="http://www.w3.org/2000/svg">
+<text x="60" y="12" text-anchor="middle" font-size="9" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">Input</text>
+<text x="160" y="12" text-anchor="middle" font-size="9" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">Encode</text>
+<text x="240" y="12" text-anchor="middle" font-size="9" fill="#0F6E56" font-family="var(--font-sans)" font-weight="500">Bottleneck</text>
+<text x="320" y="12" text-anchor="middle" font-size="9" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">Decode</text>
+<text x="420" y="12" text-anchor="middle" font-size="9" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">Output</text>
+${[20,40,60,80].map(y=>`<circle cx="60" cy="${y}" r="7" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>`).join('')}
+${[30,55,75].map(y=>`<circle cx="160" cy="${y}" r="7" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>`).join('')}
+${[40,60].map(y=>`<circle cx="240" cy="${y}" r="9" fill="#1D9E75" stroke="#0F6E56" stroke-width="1"/>`).join('')}
+${[30,55,75].map(y=>`<circle cx="320" cy="${y}" r="7" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>`).join('')}
+${[20,40,60,80].map(y=>`<circle cx="420" cy="${y}" r="7" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>`).join('')}
+${[20,40,60,80].flatMap(y1=>[30,55,75].map(y2=>`<line x1="67" y1="${y1}" x2="153" y2="${y2}" stroke="#0F6E56" stroke-width="0.3" opacity="0.3" marker-end="url(#a)"/>`)).join('')}
+${[30,55,75].flatMap(y1=>[40,60].map(y2=>`<line x1="167" y1="${y1}" x2="231" y2="${y2}" stroke="#0F6E56" stroke-width="0.4" opacity="0.5" marker-end="url(#a)"/>`)).join('')}
+${[40,60].flatMap(y1=>[30,55,75].map(y2=>`<line x1="249" y1="${y1}" x2="313" y2="${y2}" stroke="#0F6E56" stroke-width="0.4" opacity="0.5" marker-end="url(#a)"/>`)).join('')}
+${[30,55,75].flatMap(y1=>[20,40,60,80].map(y2=>`<line x1="327" y1="${y1}" x2="413" y2="${y2}" stroke="#0F6E56" stroke-width="0.3" opacity="0.3" marker-end="url(#a)"/>`)).join('')}
+<path d="M240 78 Q240 88 60 88 Q50 88 50 80" fill="none" stroke="#0F6E56" stroke-width="0.7" stroke-dasharray="3 2" marker-end="url(#a)" opacity="0.5"/>
+<text x="150" y="86" font-size="8" fill="#0F6E56" font-family="var(--font-sans)">reconstruct</text>
+</svg>`,
+    code: `import numpy as np
+
+def relu(x): return np.maximum(0, x)
+def relu_d(x): return (x > 0).astype(float)
+def mse(y, yhat): return np.mean((y - yhat)**2)
+
+class Autoencoder:
+    def __init__(self):
+        # 4 → 2 → 4  (compress then reconstruct)
+        self.W1 = np.random.randn(4, 2) * 0.5   # encoder
+        self.W2 = np.random.randn(2, 4) * 0.5   # decoder
+
+    def forward(self, x):
+        self.x   = x
+        self.enc = relu(x @ self.W1)   # compressed code
+        self.out = relu(self.enc @ self.W2)  # reconstruction
+        return self.enc, self.out
+
+    def backward(self, lr=0.01):
+        err  = self.out - self.x                      # reconstruction error
+        d2   = err * relu_d(self.out)                 # decoder delta
+        d1   = (d2 @ self.W2.T) * relu_d(self.enc)   # encoder delta
+
+        self.W2 -= self.enc.T @ d2 * lr
+        self.W1 -= self.x.T   @ d1 * lr
+
+# Train on some 4-dim data
+ae = Autoencoder()
+X  = np.random.rand(20, 4)
+
+for epoch in range(500):
+    enc, out = ae.forward(X)
+    ae.backward(lr=0.05)
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch:4d}  loss={mse(X, out):.4f}")
+
+enc, out = ae.forward(X[:3])
+print("\\nOriginal:", np.round(X[:3], 2))
+print("Encoding:", np.round(enc, 2))     # compressed 2D
+print("Reconstructed:", np.round(out, 2))`
+  },
+  {
+    id: "hopfield", name: "Hopfield", full: "Hopfield Network",
+    tagClass: "tag-amber", bp: "No backprop — energy minimization",
+    why: "Fully connected recurrent network storing memories as energy minima. Acts as an associative memory — give it a noisy input and it retrieves the closest stored pattern.",
+    when: "Pattern completion, noise correction, associative memory, optimization problems.",
+    useCases: ["Pattern retrieval", "Noise removal", "Combinatorial optimization"],
+    backprop: "None. Uses Hebbian learning to store patterns, then settles to minimum energy state via async updates. No gradients.",
+    complexity: "Low", data: "Patterns", memory: "Associative",
+    viz: `<svg width="100%" viewBox="0 0 480 90" xmlns="http://www.w3.org/2000/svg">
+${[0,1,2,3,4].map(i=>{
+  const a=(i/5)*2*Math.PI - Math.PI/2;
+  const cx=Math.round(160+70*Math.cos(a));
+  const cy=Math.round(50+35*Math.sin(a));
+  return `<circle cx="${cx}" cy="${cy}" r="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.8"/><text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="9" fill="#633806" font-family="var(--font-sans)" font-weight="500">n${i}</text>`;
+}).join('')}
+${[0,1,2,3,4].flatMap(i=>[0,1,2,3,4].filter(j=>j!==i).map(j=>{
+  const ai=(i/5)*2*Math.PI - Math.PI/2;
+  const aj=(j/5)*2*Math.PI - Math.PI/2;
+  const x1=Math.round(160+70*Math.cos(ai));
+  const y1=Math.round(50+35*Math.sin(ai));
+  const x2=Math.round(160+70*Math.cos(aj));
+  const y2=Math.round(50+35*Math.sin(aj));
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#BA7517" stroke-width="0.3" opacity="0.2"/>`;
+})).join('')}
+<rect x="290" y="10" width="170" height="70" fill="var(--color-background-secondary)" stroke="var(--color-border-tertiary)" stroke-width="0.5" rx="6"/>
+<text x="375" y="26" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)" font-family="var(--font-sans)" font-weight="500">Energy minimization</text>
+<path d="M308 65 Q330 25 352 55 Q374 75 396 35 Q418 15 438 45" fill="none" stroke="#EF9F27" stroke-width="1.5"/>
+<circle cx="396" cy="35" r="4" fill="#D85A30"/>
+<text x="375" y="78" text-anchor="middle" font-size="8" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">pattern stored = local minimum</text>
+</svg>`,
+    code: `import numpy as np
+
+class HopfieldNetwork:
+    def __init__(self, n):
+        self.n = n
+        self.W = np.zeros((n, n))
+
+    def train(self, patterns):
+        """Hebbian rule: neurons that fire together, wire together"""
+        for p in patterns:
+            p = p.reshape(-1, 1)
+            self.W += p @ p.T
+        np.fill_diagonal(self.W, 0)     # no self-connections
+        self.W /= len(patterns)
+
+    def recall(self, noisy, steps=10):
+        """Async update until energy stops decreasing"""
+        state = noisy.copy()
+        for _ in range(steps):
+            for i in np.random.permutation(self.n):
+                net_input = self.W[i] @ state
+                state[i]  = 1 if net_input >= 0 else -1
+        return state
+
+    def energy(self, state):
+        return -0.5 * state @ self.W @ state
+
+# Store 2 patterns (use ±1, not 0/1)
+patterns = [
+    np.array([ 1, 1,-1,-1, 1]),
+    np.array([-1, 1, 1,-1,-1]),
+]
+hn = HopfieldNetwork(n=5)
+hn.train(patterns)
+
+# Recall from a noisy version of pattern 1
+noisy = np.array([1, 1, 1, -1, 1])   # bit 2 is flipped
+recalled = hn.recall(noisy)
+
+print("Original:", patterns[0])    # [ 1  1 -1 -1  1]
+print("Noisy:   ", noisy)          # [ 1  1  1 -1  1]
+print("Recalled:", recalled)       # [ 1  1 -1 -1  1]  ← restored!`
+  },
+  {
+    id: "som", name: "SOM", full: "Self-Organizing Map",
+    tagClass: "tag-pink", bp: "No backprop — competitive learning",
+    why: "Unsupervised network that maps high-dimensional data onto a 2D grid while preserving topology. Similar inputs land near each other on the map.",
+    when: "Data visualization, clustering, dimensionality reduction, exploring unknown datasets.",
+    useCases: ["Document clustering", "Market segmentation", "Data exploration"],
+    backprop: "None. Uses winner-takes-all: find closest neuron (BMU) to input, update it and its neighbors toward the input. No loss function.",
+    complexity: "Low–Medium", data: "Unlabeled", memory: "Topology",
+    viz: `<svg width="100%" viewBox="0 0 480 90" xmlns="http://www.w3.org/2000/svg">
+${Array.from({length:25},(_,i)=>{
+  const row=Math.floor(i/5), col=i%5;
+  const colors=["#F4C0D1","#ED93B1","#F4C0D1","#D4537E","#F4C0D1","#ED93B1","#D4537E","#ED93B1","#F4C0D1","#D4537E","#F4C0D1","#ED93B1","#D4537E","#ED93B1","#F4C0D1","#D4537E","#ED93B1","#F4C0D1","#ED93B1","#D4537E","#F4C0D1","#D4537E","#ED93B1","#D4537E","#F4C0D1"];
+  return `<rect x="${30+col*30}" y="${12+row*16}" width="26" height="13" rx="2" fill="${colors[i]}" stroke="#993556" stroke-width="0.3"/>`;
+}).join('')}
+<text x="100" y="88" text-anchor="middle" font-size="8" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">2D grid map</text>
+<text x="285" y="16" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)" font-family="var(--font-sans)">Input → BMU → neighbor update</text>
+${[30,50,70].map(y=>`<circle cx="230" cy="${y}" r="6" fill="#FBEAF0" stroke="#993556" stroke-width="0.5"/>`).join('')}
+<line x1="244" y1="50" x2="270" y2="50" stroke="#993556" stroke-width="0.8" marker-end="url(#a)"/>
+<rect x="272" y="30" width="55" height="40" fill="#F4C0D1" stroke="#993556" stroke-width="1.5" rx="4"/>
+<text x="299" y="48" text-anchor="middle" font-size="9" fill="#72243E" font-family="var(--font-sans)" font-weight="500">BMU</text>
+<text x="299" y="62" text-anchor="middle" font-size="8" fill="#993556" font-family="var(--font-sans)">winner</text>
+${[[327,16],[349,26],[349,46],[349,66],[327,56]].map(([x,y])=>`<rect x="${x}" y="${y}" width="24" height="18" rx="2" fill="#ED93B1" stroke="#993556" stroke-width="0.5" opacity="0.7"/>`).join('')}
+<text x="380" y="44" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)" font-family="var(--font-sans)">neighbors</text>
+<text x="380" y="55" text-anchor="middle" font-size="8" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">also pull</text>
+</svg>`,
+    code: `import numpy as np
+
+class SOM:
+    def __init__(self, rows, cols, input_dim):
+        self.shape = (rows, cols)
+        # Each neuron has a weight vector same size as input
+        self.weights = np.random.rand(rows, cols, input_dim)
+
+    def _bmu(self, x):
+        """Best Matching Unit — neuron closest to input x"""
+        dists = np.linalg.norm(self.weights - x, axis=2)
+        return np.unravel_index(dists.argmin(), self.shape)
+
+    def _neighbor_strength(self, bmu, i, j, radius):
+        """Gaussian neighborhood function"""
+        d2 = (bmu[0]-i)**2 + (bmu[1]-j)**2
+        return np.exp(-d2 / (2 * radius**2))
+
+    def train(self, data, epochs=200, lr0=0.5, radius0=2.0):
+        for epoch in range(epochs):
+            lr     = lr0 * np.exp(-epoch / epochs)
+            radius = max(radius0 * np.exp(-epoch / epochs), 0.5)
+
+            for x in data:
+                bmu = self._bmu(x)
+                for i in range(self.shape[0]):
+                    for j in range(self.shape[1]):
+                        nb = self._neighbor_strength(bmu, i, j, radius)
+                        # Pull neuron weights toward input
+                        self.weights[i,j] += lr * nb * (x - self.weights[i,j])
+
+    def map_data(self, data):
+        return [self._bmu(x) for x in data]
+
+# Cluster 2D points into a 4x4 map
+som = SOM(rows=4, cols=4, input_dim=2)
+data = np.vstack([
+    np.random.randn(20, 2) + [2, 2],   # cluster A
+    np.random.randn(20, 2) + [-2, -2], # cluster B
+])
+som.train(data, epochs=300)
+mapped = som.map_data(data)
+print("First 5 BMUs:", mapped[:5])`
+  },
+];
+
+const tabsEl = document.getElementById('tabs');
+const panelsEl = document.getElementById('panels');
+
+NNs.forEach((nn, idx) => {
+  const tab = document.createElement('button');
+  tab.className = 'tab' + (idx===0?' active':'');
+  tab.textContent = nn.name;
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('p-'+nn.id).classList.add('active');
+  };
+  tabsEl.appendChild(tab);
+
+  const bpColors = {
+    "Full backprop": "tag-blue",
+    "Backprop through convolutions": "tag-green",
+    "BPTT (Backprop Through Time)": "tag-purple",
+    "BPTT with gating": "tag-coral",
+    "Full backprop (encoder + decoder)": "tag-teal",
+    "No backprop — energy minimization": "tag-amber",
+    "No backprop — competitive learning": "tag-pink",
+  };
+
+  const panel = document.createElement('div');
+  panel.className = 'panel' + (idx===0?' active':'');
+  panel.id = 'p-'+nn.id;
+  panel.innerHTML = `
+<div class="card">
+  <div class="card-header">
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:16px;font-weight:500;color:var(--color-text-primary)">${nn.full}</span>
+        <span class="badge ${bpColors[nn.bp] || 'tag-blue'}">${nn.bp}</span>
+      </div>
+      <div class="meta-row">
+        <span class="pill">Complexity: ${nn.complexity}</span>
+        <span class="pill">Data: ${nn.data}</span>
+        <span class="pill">Memory: ${nn.memory}</span>
+      </div>
+    </div>
+  </div>
+  <div class="viz"><div class="viz-title">Architecture</div>${nn.viz}</div>
+  <div class="card-body">
+    <div class="section-label">What it is</div>
+    <p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">${nn.why}</p>
+    <div class="section-label">When to use</div>
+    <p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">${nn.when}</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+      ${nn.useCases.map(u=>`<span class="pill ${nn.tagClass}" style="border-color:transparent">${u}</span>`).join('')}
+    </div>
+    <div class="bp-note">Backpropagation: ${nn.backprop}</div>
+    <div class="section-label" style="margin-top:16px">Python code (no TensorFlow)</div>
+    <div class="code-block">${nn.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+  </div>
+</div>`;
+  panelsEl.appendChild(panel);
+});
+</script>

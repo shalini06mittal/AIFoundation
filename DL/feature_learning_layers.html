@@ -1,0 +1,225 @@
+
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  .wrap{padding:1rem 0;font-family:var(--font-sans);}
+  .layer-stepper{display:flex;flex-direction:column;gap:0;}
+  .layer-row{display:flex;align-items:stretch;gap:0;cursor:pointer;border-radius:var(--border-radius-md);transition:background .15s;margin-bottom:4px;}
+  .layer-row:hover .layer-main{background:var(--color-background-secondary);}
+  .layer-row.active .layer-main{background:var(--color-background-secondary);border-color:var(--color-border-primary);}
+  .layer-num{width:36px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--color-text-tertiary);flex-shrink:0;}
+  .layer-main{flex:1;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px;transition:all .2s;}
+  .layer-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .layer-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;}
+  .layer-title{font-size:14px;font-weight:500;color:var(--color-text-primary);}
+  .layer-sub{font-size:12px;color:var(--color-text-secondary);line-height:1.5;}
+  .feature-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .chip{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:500;}
+  .detail-panel{margin-top:10px;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);line-height:1.7;display:none;}
+  .detail-panel.open{display:block;}
+  .mini-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin-top:8px;}
+  .pixel{width:100%;aspect-ratio:1;border-radius:2px;}
+  .connector{height:16px;display:flex;align-items:center;justify-content:center;margin:0 0 0 36px;}
+  .connector-line{flex:1;border-left:1.5px dashed var(--color-border-tertiary);height:16px;margin-left:16px;}
+  .section-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px;}
+  .flow-row{display:flex;align-items:center;gap:0;margin-top:1.25rem;}
+  .flow-box{flex:1;text-align:center;padding:8px 4px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);}
+  .flow-box .fb-title{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px;}
+  .flow-arrow{width:28px;text-align:center;font-size:16px;color:var(--color-text-tertiary);flex-shrink:0;}
+  .ask-btn{margin-top:14px;padding:7px 16px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;font-size:13px;cursor:pointer;color:var(--color-text-secondary);}
+  .ask-btn:hover{background:var(--color-background-secondary);}
+</style>
+
+<div class="wrap">
+<h2 class="sr-only">How deep learning layers automatically learn features</h2>
+
+<div class="section-title">Click any layer to see what it learns — using a cat photo as example</div>
+
+<div class="layer-stepper" id="stepper">
+
+  <div class="layer-row" onclick="toggle(0)">
+    <div class="layer-num">IN</div>
+    <div class="layer-main" id="lm0">
+      <div class="layer-header">
+        <span class="layer-badge" style="background:#E6F1FB;color:#0C447C;">Raw input</span>
+        <span class="layer-title">Pixel values</span>
+      </div>
+      <div class="layer-sub">The network sees nothing but a grid of numbers — each pixel's brightness (0=black, 255=white). No meaning yet.</div>
+      <div class="feature-chips">
+        <span class="chip" style="background:#E6F1FB;color:#0C447C;">255, 240, 18, 0, 12...</span>
+        <span class="chip" style="background:#E6F1FB;color:#0C447C;">just numbers</span>
+      </div>
+      <div class="detail-panel" id="dp0">
+        A 64×64 cat photo = 4,096 pixels. Each pixel is just a number. The network has no idea these numbers represent a cat — yet. This is all that goes in.
+        <div class="mini-grid" id="pixel-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-line"></div></div>
+
+  <div class="layer-row" onclick="toggle(1)">
+    <div class="layer-num">L1</div>
+    <div class="layer-main" id="lm1">
+      <div class="layer-header">
+        <span class="layer-badge" style="background:#FAEEDA;color:#633806;">Layer 1</span>
+        <span class="layer-title">Edges and gradients</span>
+      </div>
+      <div class="layer-sub">Neurons here fire when they detect abrupt changes in brightness — the outline of something. Very simple. Very local.</div>
+      <div class="feature-chips">
+        <span class="chip" style="background:#FAEEDA;color:#633806;">vertical edge</span>
+        <span class="chip" style="background:#FAEEDA;color:#633806;">horizontal edge</span>
+        <span class="chip" style="background:#FAEEDA;color:#633806;">diagonal line</span>
+        <span class="chip" style="background:#FAEEDA;color:#633806;">colour change</span>
+      </div>
+      <div class="detail-panel" id="dp1">
+        Each neuron has learned a small filter — like a tiny 3×3 stamp — that it slides across the image. When its stamp matches what's in the image (e.g. a sharp brightness change), it fires. This happens automatically through training. Nobody programmed "look for edges."
+        <br><br>
+        Think of it like: the neuron stumbled across edges being a useful signal and latched on.
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-line"></div></div>
+
+  <div class="layer-row" onclick="toggle(2)">
+    <div class="layer-num">L2</div>
+    <div class="layer-main" id="lm2">
+      <div class="layer-header">
+        <span class="layer-badge" style="background:#E1F5EE;color:#085041;">Layer 2</span>
+        <span class="layer-title">Shapes and textures</span>
+      </div>
+      <div class="layer-sub">Neurons here combine edges from Layer 1 into bigger patterns — curves, corners, fuzzy textures, circular blobs.</div>
+      <div class="feature-chips">
+        <span class="chip" style="background:#E1F5EE;color:#085041;">curve</span>
+        <span class="chip" style="background:#E1F5EE;color:#085041;">corner</span>
+        <span class="chip" style="background:#E1F5EE;color:#085041;">fur texture</span>
+        <span class="chip" style="background:#E1F5EE;color:#085041;">circular blob</span>
+        <span class="chip" style="background:#E1F5EE;color:#085041;">striped pattern</span>
+      </div>
+      <div class="detail-panel" id="dp2">
+        Layer 2 never sees the raw pixels. It only sees what Layer 1 reported. So it's building on top of edges: "if there's a curve here AND a curve there, that's worth noticing." Multiple edges curving around each other = a circle. Two edges meeting at 90° = a corner.
+        <br><br>
+        This is why depth matters — each layer can represent something more complex than the one below.
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-line"></div></div>
+
+  <div class="layer-row" onclick="toggle(3)">
+    <div class="layer-num">L3</div>
+    <div class="layer-main" id="lm3">
+      <div class="layer-header">
+        <span class="layer-badge" style="background:#EEEDFE;color:#3C3489;">Layer 3</span>
+        <span class="layer-title">Parts of objects</span>
+      </div>
+      <div class="layer-sub">Now combining shapes into recognisable object parts — eyes, ears, snouts, paws. Getting closer to "cat-ness."</div>
+      <div class="feature-chips">
+        <span class="chip" style="background:#EEEDFE;color:#3C3489;">eye shape</span>
+        <span class="chip" style="background:#EEEDFE;color:#3C3489;">pointed ear</span>
+        <span class="chip" style="background:#EEEDFE;color:#3C3489;">whisker</span>
+        <span class="chip" style="background:#EEEDFE;color:#3C3489;">nose shape</span>
+        <span class="chip" style="background:#EEEDFE;color:#3C3489;">paw outline</span>
+      </div>
+      <div class="detail-panel" id="dp3">
+        A "pointed ear" detector fires when it sees a triangular cluster of edges arranged the right way. A "whisker" detector fires when it sees a set of thin horizontal lines radiating outward. These neurons never explicitly knew what a cat ear was — they discovered that detecting it helped reduce the loss.
+        <br><br>
+        Fascinatingly, if you trained on dogs instead of cats, Layer 3 would learn floppy ears and snouts. The features that emerge depend entirely on what the network was trained to predict.
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-line"></div></div>
+
+  <div class="layer-row" onclick="toggle(4)">
+    <div class="layer-num">L4</div>
+    <div class="layer-main" id="lm4">
+      <div class="layer-header">
+        <span class="layer-badge" style="background:#FAECE7;color:#712B13;">Layer 4</span>
+        <span class="layer-title">Whole concepts</span>
+      </div>
+      <div class="layer-sub">The deepest layer combines parts into complete ideas — "cat face," "dog body," "car front." Abstract, high-level understanding.</div>
+      <div class="feature-chips">
+        <span class="chip" style="background:#FAECE7;color:#712B13;">cat face</span>
+        <span class="chip" style="background:#FAECE7;color:#712B13;">dog body</span>
+        <span class="chip" style="background:#FAECE7;color:#712B13;">wheel + hood = car</span>
+        <span class="chip" style="background:#FAECE7;color:#712B13;">two eyes + nose = face</span>
+      </div>
+      <div class="detail-panel" id="dp4">
+        By this point, a single neuron might fire only for "cat faces seen from the front." Another fires only for "cat faces from the side." These are incredibly specific detectors that emerged purely from showing the network labelled examples and nudging weights.
+        <br><br>
+        This is also why transfer learning works — these deep feature detectors for "eyes" and "fur" are useful for recognising dogs, foxes, or any furry animal. The early layers transfer almost perfectly to new tasks.
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-line"></div></div>
+
+  <div class="layer-row" onclick="toggle(5)">
+    <div class="layer-num">OUT</div>
+    <div class="layer-main" id="lm5">
+      <div class="layer-header">
+        <span class="layer-badge" style="background:#EAF3DE;color:#27500A;">Output</span>
+        <span class="layer-title">Final answer</span>
+      </div>
+      <div class="layer-sub">One neuron per class. Whichever fires strongest wins. Sigmoid or Softmax squashes the scores into probabilities.</div>
+      <div class="feature-chips">
+        <span class="chip" style="background:#EAF3DE;color:#27500A;">cat: 94%</span>
+        <span class="chip" style="background:#D3D1C7;color:#444441;">dog: 4%</span>
+        <span class="chip" style="background:#D3D1C7;color:#444441;">rabbit: 2%</span>
+      </div>
+      <div class="detail-panel" id="dp5">
+        Softmax turns raw scores into probabilities that sum to 100%. The class with the highest probability is the prediction. If it's wrong, the loss is high, backpropagation fires, and every weight across all layers gets nudged. Over millions of examples, the weights settle into values that make these probabilities accurate.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="flow-row">
+  <div class="flow-box"><div class="fb-title">Forward pass</div>input → layers → prediction</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box"><div class="fb-title">Loss</div>how wrong was it?</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box"><div class="fb-title">Backprop</div>who caused the error?</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-box"><div class="fb-title">Update weights</div>nudge to be less wrong</div>
+</div>
+
+<button class="ask-btn" onclick="sendPrompt('Can you explain backpropagation in simple terms?')">How exactly does backpropagation work? ↗</button>
+<button class="ask-btn" style="margin-left:8px;" onclick="sendPrompt('What is transfer learning and how does it use these learned features?')">What is transfer learning? ↗</button>
+
+</div>
+
+<script>
+const open = new Set();
+
+function toggle(i) {
+  const dp = document.getElementById('dp'+i);
+  const lm = document.getElementById('lm'+i);
+  if (open.has(i)) {
+    open.delete(i);
+    dp.classList.remove('open');
+    document.querySelectorAll('.layer-row')[i === 0 ? 0 : i*2].classList.remove('active');
+  } else {
+    open.add(i);
+    dp.classList.add('open');
+  }
+}
+
+const pixGrid = document.getElementById('pixel-grid');
+const grays = [240,235,210,180,160,140,90,60,
+               230,220,200,170,150,130,80,50,
+               210,200,185,165,140,120,70,40,
+               190,180,165,150,130,110,60,30,
+               170,160,145,135,120,100,55,28,
+               150,140,125,115,105,88,48,22,
+               130,120,110,100,90,75,42,18,
+               115,105,95,88,78,65,35,12];
+grays.forEach(v => {
+  const d = document.createElement('div');
+  d.className = 'pixel';
+  d.style.background = `rgb(${v},${v},${v})`;
+  pixGrid.appendChild(d);
+});
+</script>

@@ -1,0 +1,217 @@
+
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  .wrap{padding:1rem 0;font-family:var(--font-sans);}
+  .section{margin-bottom:1.5rem;}
+  .sec-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px;letter-spacing:.02em;}
+  .card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;margin-bottom:8px;}
+  .card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
+  .card-body{font-size:12px;color:var(--color-text-secondary);line-height:1.7;}
+  .arch-row{display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:4px;}
+  .arch-block{flex-shrink:0;text-align:center;}
+  .arch-box{border-radius:var(--border-radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 6px;margin:0 2px;}
+  .arch-label{font-size:11px;color:var(--color-text-secondary);margin-top:5px;}
+  .arch-num{font-size:13px;font-weight:500;color:var(--color-text-primary);}
+  .arch-arrow{font-size:18px;color:var(--color-text-tertiary);padding:0 2px;align-self:center;flex-shrink:0;margin-bottom:20px;}
+  .pixel-demo{display:grid;gap:1px;margin:8px auto;}
+  .px{border-radius:1px;}
+  .filter-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:72px;}
+  .filter-cell{aspect-ratio:1;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;}
+  .filter-row-wrap{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;}
+  .filter-card{text-align:center;}
+  .filter-lbl{font-size:11px;color:var(--color-text-secondary);margin-top:4px;}
+  .neuron-dots{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;}
+  .ndot{width:10px;height:10px;border-radius:50%;}
+  .hp-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .hp-table th{text-align:left;padding:6px 8px;color:var(--color-text-secondary);font-weight:500;border-bottom:0.5px solid var(--color-border-tertiary);}
+  .hp-table td{padding:6px 8px;color:var(--color-text-primary);border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:top;}
+  .hp-table td:first-child{color:var(--color-text-secondary);width:38%;}
+  .tag{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;margin-right:3px;}
+  .tag-you{background:#E1F5EE;color:#085041;}
+  .tag-net{background:#EEEDFE;color:#3C3489;}
+  .neuron-response-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+  .nr-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;}
+  .nr-title{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
+  .nr-body{font-size:11px;color:var(--color-text-secondary);line-height:1.6;}
+  .fire-bar{height:6px;border-radius:3px;margin-top:6px;transition:width .4s;}
+  .ask-btn{margin-top:12px;padding:7px 16px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;font-size:13px;cursor:pointer;color:var(--color-text-secondary);}
+  .ask-btn:hover{background:var(--color-background-secondary);}
+</style>
+
+<div class="wrap">
+<h2 class="sr-only">How many neurons, who decides, and what Layer 4 neurons detect</h2>
+
+<div class="section">
+  <div class="sec-title">The full architecture — neuron counts at each stage</div>
+  <div class="arch-row" id="arch-row"></div>
+  <div class="card" style="margin-top:4px;">
+    <div class="card-body">The input layer has exactly 4,096 neurons (one per pixel). Every other layer's size is chosen by the engineer. Notice how hidden layers often grow then shrink — wider in the middle to learn more combinations, narrower at output.</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-title">How Layer 1 neurons actually work — sliding filters</div>
+  <div class="card">
+    <div class="card-title">A neuron does not look at the whole 64×64 image</div>
+    <div class="card-body">Each Layer 1 neuron has a tiny 3×3 filter — 9 learnable weights. It slides this filter across every possible position in the image (that's 62×62 = 3,844 positions). At each position it asks: "does my pattern match what's here?" The same neuron, same 9 weights, checks the whole image.</div>
+    <div class="filter-row-wrap" id="filter-demo"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">So how many neurons does Layer 1 really have?</div>
+    <div class="card-body">If you put 32 filters in Layer 1, you have 32 neurons — each with its own 9-weight 3×3 filter. Each one learns a different edge type. 64 filters = 64 neurons. The count is a hyperparameter you set. Typical first layers: 32 to 128 filters.</div>
+    <div id="filter-count-demo" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-title">Who decides what — you vs the network</div>
+  <table class="hp-table">
+    <tr><th>Decision</th><th>Who sets it</th><th>Called</th></tr>
+    <tr><td>How many neurons per layer</td><td><span class="tag tag-you">You</span></td><td>Hyperparameter</td></tr>
+    <tr><td>How many layers total</td><td><span class="tag tag-you">You</span></td><td>Hyperparameter</td></tr>
+    <tr><td>Filter size (3×3, 5×5...)</td><td><span class="tag tag-you">You</span></td><td>Hyperparameter</td></tr>
+    <tr><td>Which activation function</td><td><span class="tag tag-you">You</span></td><td>Hyperparameter</td></tr>
+    <tr><td>Actual weight values</td><td><span class="tag tag-net">Network learns</span></td><td>Parameters</td></tr>
+    <tr><td>What each neuron detects</td><td><span class="tag tag-net">Network learns</span></td><td>Emergent feature</td></tr>
+    <tr><td>Which neurons to combine</td><td><span class="tag tag-net">Network learns</span></td><td>Emergent behaviour</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="sec-title">Layer 4 — does one neuron = one animal?</div>
+  <div class="card">
+    <div class="card-title">Not exactly — it's more interesting than that</div>
+    <div class="card-body">Click an animal to see which Layer 4 neurons fire — multiple neurons respond, each contributing a piece of the recognition.</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;" id="animal-btns"></div>
+    <div class="neuron-response-grid" id="neuron-grid" style="margin-top:12px;"></div>
+    <div class="card-body" style="margin-top:10px;" id="animal-explain"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">The output layer is different — one neuron per class</div>
+    <div class="card-body">The very last layer (output) does have one neuron per category — one for "cat", one for "dog", one for "rabbit." But these output neurons don't detect features — they just score how strongly the deep features match their class. The feature detection happens in the hidden layers.</div>
+  </div>
+</div>
+
+<button class="ask-btn" onclick="sendPrompt('What is overfitting and how do you prevent it?')">What happens if you use too many neurons? (overfitting) ↗</button>
+<button class="ask-btn" style="margin-left:8px;" onclick="sendPrompt('How do researchers decide the right number of neurons and layers for a neural network?')">How do researchers choose neuron counts in practice? ↗</button>
+</div>
+
+<script>
+const archData = [
+  {label:'Input', num:'4,096', sub:'64×64 px', color:'#E6F1FB', stroke:'#185FA5', tc:'#0C447C', h:90},
+  {label:'Layer 1', num:'32', sub:'filters', color:'#FAEEDA', stroke:'#854F0B', tc:'#633806', h:72},
+  {label:'Layer 2', num:'64', sub:'filters', color:'#E1F5EE', stroke:'#0F6E56', tc:'#085041', h:82},
+  {label:'Layer 3', num:'128', sub:'neurons', color:'#EEEDFE', stroke:'#534AB7', tc:'#3C3489', h:88},
+  {label:'Layer 4', num:'256', sub:'neurons', color:'#FAECE7', stroke:'#993C1D', tc:'#712B13', h:82},
+  {label:'Output', num:'10', sub:'classes', color:'#EAF3DE', stroke:'#3B6D11', tc:'#27500A', h:52},
+];
+
+const archRow = document.getElementById('arch-row');
+archData.forEach((d,i) => {
+  const block = document.createElement('div');
+  block.className = 'arch-block';
+  block.innerHTML = `<div class="arch-box" style="background:${d.color};border:0.5px solid ${d.stroke};width:78px;height:${d.h}px;">
+    <div class="arch-num" style="color:${d.tc}">${d.num}</div>
+    <div style="font-size:10px;color:${d.stroke}">${d.sub}</div>
+  </div><div class="arch-label">${d.label}</div>`;
+  archRow.appendChild(block);
+  if (i < archData.length-1) {
+    const arr = document.createElement('div');
+    arr.className = 'arch-arrow';
+    arr.textContent = '→';
+    archRow.appendChild(arr);
+  }
+});
+
+const filters = [
+  {name:'Vertical edge', vals:[-1,0,1,-1,0,1,-1,0,1], colors:['#F09595','#D3D1C7','#85B7EB','#F09595','#D3D1C7','#85B7EB','#F09595','#D3D1C7','#85B7EB']},
+  {name:'Horizontal edge', vals:[-1,-1,-1,0,0,0,1,1,1], colors:['#F09595','#F09595','#F09595','#D3D1C7','#D3D1C7','#D3D1C7','#85B7EB','#85B7EB','#85B7EB']},
+  {name:'Diagonal', vals:[1,0,-1,0,0,0,-1,0,1], colors:['#85B7EB','#D3D1C7','#F09595','#D3D1C7','#D3D1C7','#D3D1C7','#F09595','#D3D1C7','#85B7EB']},
+];
+const filterDemo = document.getElementById('filter-demo');
+filters.forEach(f => {
+  const fc = document.createElement('div');
+  fc.className = 'filter-card';
+  let cells = '';
+  f.vals.forEach((v,i) => {
+    cells += `<div class="filter-cell" style="background:${f.colors[i]};color:#333;">${v}</div>`;
+  });
+  fc.innerHTML = `<div class="filter-grid">${cells}</div><div class="filter-lbl">${f.name}</div>`;
+  filterDemo.appendChild(fc);
+});
+
+const fcd = document.getElementById('filter-count-demo');
+[8,16,32,64].forEach(n => {
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;';
+  let dots = '';
+  for (let i=0;i<Math.min(n,32);i++) dots += `<div style="width:8px;height:8px;border-radius:50%;background:#9FE1CB;flex-shrink:0;"></div>`;
+  if(n>32) dots += `<span style="font-size:11px;color:var(--color-text-tertiary)">+${n-32} more</span>`;
+  row.innerHTML = `<span style="font-size:12px;color:var(--color-text-secondary);min-width:80px;">${n} filters:</span><div style="display:flex;flex-wrap:wrap;gap:3px;">${dots}</div>`;
+  fcd.appendChild(row);
+});
+
+const animals = [
+  {
+    name:'Cat',
+    explain:'No single neuron says "cat." Instead: neuron A fires for pointy ears, neuron B fires for vertical slit pupils, neuron C fires for fine whisker texture. The output neuron for "cat" receives a strong combined signal from all three — and that combination is what makes it a cat.',
+    neurons:[
+      {label:'Pointy ear detector', pct:92, color:'#EF9F27'},
+      {label:'Slit pupil detector', pct:85, color:'#EF9F27'},
+      {label:'Fine fur texture', pct:78, color:'#EF9F27'},
+      {label:'Floppy ear detector', pct:4, color:'#E24B4A'},
+    ]
+  },
+  {
+    name:'Dog',
+    explain:'The dog fires completely different neurons. The "floppy ear" neuron fires strongly. The "wet nose" neuron fires. The "slit pupil" neuron (strong for cats) barely fires at all. Same network, same layers, different neurons lighting up.',
+    neurons:[
+      {label:'Floppy ear detector', pct:88, color:'#EF9F27'},
+      {label:'Round pupil detector', pct:80, color:'#EF9F27'},
+      {label:'Coarse fur texture', pct:72, color:'#EF9F27'},
+      {label:'Slit pupil detector', pct:6, color:'#E24B4A'},
+    ]
+  },
+  {
+    name:'Bird',
+    explain:'Birds share the "round eye" neuron with dogs, but fire unique neurons for beaks and feather textures. Some neurons are shared across animals (eyes, fur-like textures), others are very specific. This sharing is what allows transfer learning.',
+    neurons:[
+      {label:'Beak shape detector', pct:95, color:'#EF9F27'},
+      {label:'Feather texture', pct:89, color:'#EF9F27'},
+      {label:'Round pupil detector', pct:60, color:'#EF9F27'},
+      {label:'Fur texture detector', pct:8, color:'#E24B4A'},
+    ]
+  },
+];
+
+const animalBtns = document.getElementById('animal-btns');
+const neuronGrid = document.getElementById('neuron-grid');
+const animalExplain = document.getElementById('animal-explain');
+
+animals.forEach((a,ai) => {
+  const btn = document.createElement('button');
+  btn.className = 'ask-btn';
+  btn.style.margin='0';
+  btn.textContent = a.name;
+  btn.onclick = () => {
+    document.querySelectorAll('#animal-btns button').forEach(b => b.style.background='');
+    btn.style.background = 'var(--color-background-secondary)';
+    neuronGrid.innerHTML = '';
+    a.neurons.forEach(n => {
+      const nc = document.createElement('div');
+      nc.className = 'nr-card';
+      nc.innerHTML = `<div class="nr-title">${n.label}</div>
+        <div class="nr-body">Activation: ${n.pct}%</div>
+        <div style="background:var(--color-border-tertiary);border-radius:3px;height:6px;margin-top:6px;">
+          <div class="fire-bar" style="width:0%;background:${n.color};"></div>
+        </div>`;
+      neuronGrid.appendChild(nc);
+      setTimeout(() => { nc.querySelector('.fire-bar').style.width = n.pct+'%'; }, 50);
+    });
+    animalExplain.textContent = a.explain;
+  };
+  animalBtns.appendChild(btn);
+});
+
+animals[0] && animalBtns.children[0].click();
+</script>
