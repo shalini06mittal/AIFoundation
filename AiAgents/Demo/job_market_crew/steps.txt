@@ -1,0 +1,23 @@
+ mkdir job_market_crew && cd job_market_crew
+ python -m venv venv
+source venv/bin/activate
+
+pip install crewai crewai-tools
+
+ pip install langchain langchain-community langchain-openai
+
+# Vector store for RAG
+pip install chromadb
+
+# PDF loading (to build the RAG knowledge base from documents)
+pip install pypdf
+
+# Environment variable management
+pip install python-dotenv
+
+# Web search tool dependency
+pip install google-search-results
+pip install "crewai[google-genai]"
+
+
+To run: python 1_email_agent.py
